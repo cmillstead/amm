@@ -192,4 +192,55 @@ contract AMM {
             block.timestamp
         );
     }
+
+    // determine how many tokens will be withdrawn
+    function calculateWithdrawAmount(uint256 _share)
+        public
+        view
+        returns (
+            uint256 token1Amount,
+            uint256 token2Amount
+        )
+    {
+        require(
+            _share <= totalShares,
+            "must be less than total shares"
+        );
+        token1Amount = (token1Balance * _share) / totalShares;
+        token2Amount = (token2Balance * _share) / totalShares;
+    }
+
+    function removeLiquidity(uint256 _share)
+        external
+        returns (
+            uint256 token1Amount,
+            uint256 token2Amount
+    ) {
+        require(
+            _share <= shares[msg.sender],
+            "cannot withdraw more than you have"
+        );
+        (token1Amount, token2Amount) = calculateWithdrawAmount(_share);
+
+        token1.transfer(msg.sender, token1Amount);
+        token2.transfer(msg.sender, token2Amount);
+
+        token1Balance -= token1Amount;
+        token2Balance -= token2Amount;
+        K = token1Balance * token2Balance;
+
+        shares[msg.sender] -= _share;
+        totalShares -= _share;
+
+        emit Swap(
+            msg.sender,
+            address(token1),
+            token1Amount,
+            address(token2),
+            token2Amount,
+            token1Balance,
+            token2Balance,
+            block.timestamp
+        );
+    }
 }
