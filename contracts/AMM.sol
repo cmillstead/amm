@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "./Token.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract AMM {
+contract AMM is ReentrancyGuard {
     Token public token1;
     Token public token2;
 
@@ -27,18 +28,15 @@ contract AMM {
     uint256 public totalShares;
     mapping(address => uint256) public shares;
 
-    constructor(
-        Token _token1,
-        Token _token2
-    ) {
+    constructor(Token _token1, Token _token2) {
         token1 = _token1;
         token2 = _token2;
     }
 
-    function addLiquidity(
-        uint256 _token1Amount,
-        uint256 _token2Amount
-    ) external {
+    function addLiquidity(uint256 _token1Amount, uint256 _token2Amount)
+        external
+        nonReentrant
+    {
         //deposit tokens
         require(
             token1.transferFrom(msg.sender, address(this), _token1Amount),
@@ -137,6 +135,7 @@ contract AMM {
 
     function swapToken1(uint256 _token1Amount)
         external
+        nonReentrant
         returns (uint256 token2Amount)
     {
         // calculate token2 amount
@@ -166,6 +165,7 @@ contract AMM {
 
     function swapToken2(uint256 _token2Amount)
         external
+        nonReentrant
         returns (uint256 token1Amount)
     {
         // calculate token1 amount
@@ -197,10 +197,7 @@ contract AMM {
     function calculateWithdrawAmount(uint256 _share)
         public
         view
-        returns (
-            uint256 token1Amount,
-            uint256 token2Amount
-        )
+        returns (uint256 token1Amount, uint256 token2Amount)
     {
         require(
             _share <= totalShares,
@@ -212,10 +209,8 @@ contract AMM {
 
     function removeLiquidity(uint256 _share)
         external
-        returns (
-            uint256 token1Amount,
-            uint256 token2Amount
-    ) {
+        returns (uint256 token1Amount, uint256 token2Amount)
+    {
         require(
             _share <= shares[msg.sender],
             "cannot withdraw more than you have"
