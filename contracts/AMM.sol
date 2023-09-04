@@ -33,6 +33,7 @@ contract AMM is ReentrancyGuard {
         token2 = _token2;
     }
 
+
     function addLiquidity(uint256 _token1Amount, uint256 _token2Amount)
         external
         nonReentrant
@@ -73,6 +74,7 @@ contract AMM is ReentrancyGuard {
         shares[msg.sender] += share;
     }
 
+
     // determine how many token2 token must be deposited when depositing liquiditiy for token1
     function calculateToken2Deposit(uint256 _token1Amount)
          public
@@ -82,6 +84,7 @@ contract AMM is ReentrancyGuard {
         token2Amount = (token2Balance * _token1Amount) / token1Balance;
     }
 
+
     // determine how many token1 token must be deposited when depositing liquiditiy for token2
     function calculateToken1Deposit(uint256 _token2Amount)
          public
@@ -90,6 +93,7 @@ contract AMM is ReentrancyGuard {
     {
         token1Amount = (token1Balance * _token2Amount) / token2Balance;
     }
+
 
     // returns amount of token2 received when swapping token1
     function calculateToken1Swap(uint256 _token1Amount)
@@ -112,6 +116,7 @@ contract AMM is ReentrancyGuard {
         );
     }
 
+
     // returns amount of token1 received when swapping token2
     function calculateToken2Swap(uint256 _token2Amount)
          public
@@ -132,6 +137,7 @@ contract AMM is ReentrancyGuard {
             "swap cannot exceed pool balance"
         );
     }
+
 
     function swapToken1(uint256 _token1Amount)
         external
@@ -163,6 +169,7 @@ contract AMM is ReentrancyGuard {
         );
     }
 
+
     function swapToken2(uint256 _token2Amount)
         external
         nonReentrant
@@ -193,6 +200,7 @@ contract AMM is ReentrancyGuard {
         );
     }
 
+
     // determine how many tokens will be withdrawn
     function calculateWithdrawAmount(uint256 _share)
         public
@@ -206,6 +214,7 @@ contract AMM is ReentrancyGuard {
         token1Amount = (token1Balance * _share) / totalShares;
         token2Amount = (token2Balance * _share) / totalShares;
     }
+
 
     function removeLiquidity(uint256 _share)
         external
