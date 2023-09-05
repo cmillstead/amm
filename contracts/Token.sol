@@ -44,7 +44,10 @@ contract Token is ReentrancyGuard {
         nonReentrant
         returns (bool success)
     {
-        require(balanceOf[msg.sender] >= _value);
+        require(
+            balanceOf[msg.sender] >= _value,
+            "cannot transfer more than balance"
+        );
 
         _transfer(msg.sender, _to, _value);
 
@@ -56,7 +59,10 @@ contract Token is ReentrancyGuard {
         address _to,
         uint256 _value
     ) internal {
-        require(_to != address(0));
+        require(
+            _to != address(0),
+            "cannot transfer to the zero address"
+        );
 
         balanceOf[_from] = balanceOf[_from].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
@@ -69,7 +75,10 @@ contract Token is ReentrancyGuard {
         nonReentrant
         returns(bool success)
     {
-        require(_spender != address(0));
+        require(
+            _spender != address(0),
+            "cannot approve the zero address"
+        );
 
         allowance[msg.sender][_spender] = _value;
 
@@ -86,8 +95,14 @@ contract Token is ReentrancyGuard {
         nonReentrant
         returns (bool success)
     {
-        require(_value <= balanceOf[_from]);
-        require(_value <= allowance[_from][msg.sender]);
+        require(
+            _value <= balanceOf[_from],
+            "cannot transfer more than balance"
+        );
+        require(
+            _value <= allowance[_from][msg.sender],
+            "cannot transfer more than allowance"
+        );
 
         allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
 
