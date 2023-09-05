@@ -4,15 +4,19 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "./Token.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract AMM is ReentrancyGuard {
+    using SafeMath for uint256;
+
     Token public token1;
     Token public token2;
 
     uint256 public token1Balance;
     uint256 public token2Balance;
-    uint256 public K;
-    uint256 constant PRECISION = 10**18;
+    uint256 public K; // the Invariant
+    uint256 constant PRECISION = 10**18; // 1e18
+    uint256 constant ROUNDING = 10**3; // rounding to 3 decimal places
 
     event Swap(
         address user,
@@ -53,25 +57,25 @@ contract AMM is ReentrancyGuard {
 
         // if first time adding, make share 100
         if (totalShares == 0) {
-            share = 100 * PRECISION;
+            share = SafeMath.mul(100, PRECISION);
         } else {
-            uint256 share1 = (totalShares * _token1Amount) / token1Balance;
-            uint256 share2 = (totalShares * _token2Amount) / token2Balance;
+            uint256 share1 = SafeMath.div(SafeMath.mul(totalShares, _token1Amount), token1Balance);
+            uint256 share2 = SafeMath.div(SafeMath.mul(totalShares, _token2Amount), token2Balance);
             require(
-                (share1 / 10**3) == (share2 / 10**3),
+                SafeMath.div(share1, ROUNDING) == SafeMath.div(share2, ROUNDING),
                 "must provide equal token amounts"
             );
             share = share1;
         }
 
         // manage pool
-        token1Balance += _token1Amount;
-        token2Balance += _token2Amount;
-        K = token1Balance * token2Balance;
+        token1Balance = token1Balance.add(_token1Amount);
+        token2Balance = token2Balance.add(_token2Amount);
+        K = SafeMath.mul(token1Balance, token2Balance);
 
         // update shares
-        totalShares += share;
-        shares[msg.sender] += share;
+        totalShares = totalShares.add(share);
+        shares[msg.sender] = shares[msg.sender].add(share);
     }
 
 
@@ -81,7 +85,7 @@ contract AMM is ReentrancyGuard {
          view
          returns (uint256 token2Amount)
     {
-        token2Amount = (token2Balance * _token1Amount) / token1Balance;
+        token2Amount =  SafeMath.div(SafeMath.mul(token2Balance, _token1Amount), token1Balance);
     }
 
 
@@ -91,7 +95,7 @@ contract AMM is ReentrancyGuard {
          view
          returns (uint256 token1Amount)
     {
-        token1Amount = (token1Balance * _token2Amount) / token2Balance;
+        token1Amount = SafeMath.div(SafeMath.mul(token1Balance, _token2Amount), token2Balance);
     }
 
 
@@ -101,13 +105,13 @@ contract AMM is ReentrancyGuard {
          view
          returns (uint256 token2Amount)
     {
-        uint256 token1After = token1Balance + _token1Amount;
-        uint256 token2After = K / token1After;
-        token2Amount = token2Balance - token2After;
+        uint256 token1After = token1Balance.add(_token1Amount);
+        uint256 token2After = SafeMath.div(K, token1After);
+        token2Amount = SafeMath.sub(token2Balance, token2After);
 
         // don't let pool go to zero
         if (token2Amount == token2Balance) {
-            token2Amount--;
+            token2Amount = token2Amount.sub(1);
         }
 
         require(
@@ -123,13 +127,13 @@ contract AMM is ReentrancyGuard {
          view
          returns (uint256 token1Amount)
     {
-        uint256 token2After = token2Balance + _token2Amount;
-        uint256 token1After = K / token2After;
-        token1Amount = token1Balance - token1After;
+        uint256 token2After = token2Balance.add(_token2Amount);
+        uint256 token1After = SafeMath.div(K, token2After);
+        token1Amount = SafeMath.sub(token1Balance, token1After);
 
         // don't let pool go to zero
         if (token1Amount == token1Balance) {
-            token1Amount--;
+            token1Amount = token1Amount.sub(1);
         }
 
         require(
@@ -150,12 +154,11 @@ contract AMM is ReentrancyGuard {
         // do swap
         // 1. transfer token1 tokens out of user wallet to the contract
         token1.transferFrom(msg.sender, address(this), _token1Amount);
-        // 2. update the token1 balance in the contract
-        token1Balance += _token1Amount;
-        // 3. update the token2 balance in the contract
-        token2Balance -= token2Amount;
-        // 4. transfer token2 tokens from the contract into user wallet
+        // 2. transfer token2 tokens from the contract into user wallet
         token2.transfer(msg.sender, token2Amount);
+        // 3. update the token1 & token2 balances in the contract
+        token1Balance = token1Balance.add(_token1Amount);
+        token2Balance = token2Balance.sub(token2Amount);
 
         emit Swap(
             msg.sender,
@@ -181,12 +184,11 @@ contract AMM is ReentrancyGuard {
         // do swap
         // 1. transfer token2 tokens out of user wallet to the contract
         token2.transferFrom(msg.sender, address(this), _token2Amount);
-        // 2. update the token2 balance in the contract
-        token2Balance += _token2Amount;
-        // 3. update the token1 balance in the contract
-        token1Balance -= token1Amount;
-        // 4. transfer token1 tokens from the contract into user wallet
+        // 2. transfer token1 tokens from the contract into user wallet
         token1.transfer(msg.sender, token1Amount);
+        // 3. update the token1 & token2 balance in the contract
+        token2Balance = token2Balance.add(_token2Amount);
+        token1Balance = token1Balance.sub(token1Amount);
 
         emit Swap(
             msg.sender,
@@ -211,8 +213,8 @@ contract AMM is ReentrancyGuard {
             _share <= totalShares,
             "must be less than total shares"
         );
-        token1Amount = (token1Balance * _share) / totalShares;
-        token2Amount = (token2Balance * _share) / totalShares;
+        token1Amount = SafeMath.div(SafeMath.mul(token1Balance, _share), totalShares);
+        token2Amount = SafeMath.div(SafeMath.mul(token2Balance, _share), totalShares);
     }
 
 
@@ -229,22 +231,11 @@ contract AMM is ReentrancyGuard {
         token1.transfer(msg.sender, token1Amount);
         token2.transfer(msg.sender, token2Amount);
 
-        token1Balance -= token1Amount;
-        token2Balance -= token2Amount;
-        K = token1Balance * token2Balance;
+        token1Balance = token1Balance.sub(token1Amount);
+        token2Balance = token2Balance.sub(token2Amount);
+        K = SafeMath.mul(token1Balance, token2Balance);
 
-        shares[msg.sender] -= _share;
-        totalShares -= _share;
-
-        emit Swap(
-            msg.sender,
-            address(token1),
-            token1Amount,
-            address(token2),
-            token2Amount,
-            token1Balance,
-            token2Balance,
-            block.timestamp
-        );
+        shares[msg.sender] = shares[msg.sender].sub(_share);
+        totalShares = totalShares.sub(_share);
     }
 }

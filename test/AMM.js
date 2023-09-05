@@ -88,10 +88,10 @@ describe('AMM', () => {
             expect(await amm.token2Balance()).to.equal(amount);
 
             // check deployer has 100 shares
-            expect(await amm.shares(deployer.address)).to.equal(tokens(100));
+            expect(await amm.shares(deployer.address)).to.equal(shares(100));
 
             // check pool has 100 total shares
-            expect(await amm.totalShares()).to.equal(tokens(100));
+            expect(await amm.totalShares()).to.equal(shares(100));
 
             //////////////////////////////////////////////
             // LP adds more liquidity
@@ -113,13 +113,13 @@ describe('AMM', () => {
             await transaction.wait();
 
             // LP should have 50 shares
-            expect(await amm.shares(liquidityProvider.address)).to.equal(tokens(50));
+            expect(await amm.shares(liquidityProvider.address)).to.equal(shares(50));
 
             // deployer should stil have 100 shares
-            expect(await amm.shares(deployer.address)).to.equal(tokens(100));
+            expect(await amm.shares(deployer.address)).to.equal(shares(100));
 
             // pool should have 150 total shares
-            expect(await amm.totalShares()).to.equal(tokens(150));
+            expect(await amm.totalShares()).to.equal(shares(150));
 
             //////////////////////////////////////////////
             // Investor1 swaps

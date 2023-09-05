@@ -2,8 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract Token {
+contract Token is ReentrancyGuard {
+    using SafeMath for uint256;
+
     string public name;
     string public symbol;
     uint256 public decimals = 18;
@@ -31,12 +35,13 @@ contract Token {
     ) {
         name = _name;
         symbol = _symbol;
-        totalSupply = _totalSupply * (10**decimals);
+        totalSupply = SafeMath.mul(_totalSupply, (10**decimals));
         balanceOf[msg.sender] = totalSupply;
     }
 
     function transfer(address _to, uint256 _value)
         public
+        nonReentrant
         returns (bool success)
     {
         require(balanceOf[msg.sender] >= _value);
@@ -53,14 +58,15 @@ contract Token {
     ) internal {
         require(_to != address(0));
 
-        balanceOf[_from] = balanceOf[_from] - _value;
-        balanceOf[_to] = balanceOf[_to] + _value;
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
 
         emit Transfer(_from, _to, _value);
     }
 
     function approve(address _spender, uint256 _value)
         public
+        nonReentrant
         returns(bool success)
     {
         require(_spender != address(0));
@@ -77,12 +83,13 @@ contract Token {
         uint256 _value
     )
         public
+        nonReentrant
         returns (bool success)
     {
         require(_value <= balanceOf[_from]);
         require(_value <= allowance[_from][msg.sender]);
 
-        allowance[_from][msg.sender] = allowance[_from][msg.sender] - _value;
+        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
 
         _transfer(_from, _to, _value);
 
