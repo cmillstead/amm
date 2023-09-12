@@ -15,6 +15,11 @@ export const amm = createSlice({
             isSwapping: false,
             isSuccess: false,
             transactionHash: null
+        },
+        withdrawing: {
+            isWithdrawing: false,
+            isSuccess: false,
+            transactionHash: null
         }
     },
     reducers: {

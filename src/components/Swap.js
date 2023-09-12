@@ -15,7 +15,6 @@ import {
     swap,
     loadBalances
  } from '../store/interactions';
-import { set } from 'lodash';
 
 const Swap = () => {
     const [inputToken, setInputToken] = useState(null);
@@ -34,20 +33,6 @@ const Swap = () => {
     const isSwapping = useSelector(state => state.amm.swapping.isSwapping);
     const isSuccess = useSelector(state => state.amm.swapping.isSuccess);
     const transactionHash = useSelector(state => state.amm.swapping.transactionHash);
-
-    const getPrice = async () => {
-        if (inputToken === outputToken) {
-            setPrice(1);
-            return;
-        }
-
-        if (inputToken === 'DAPP') {
-            setPrice(await amm.token2Balance() / await amm.token1Balance());
-        } else {
-            setPrice(await amm.token1Balance() / await amm.token2Balance());
-        }
-        console.log({inputToken, outputToken});
-    };
 
     const dispatch = useDispatch();
 
@@ -93,6 +78,20 @@ const Swap = () => {
         await getPrice();
 
         setShowAlert(true);
+    };
+
+    const getPrice = async () => {
+        if (inputToken === outputToken) {
+            setPrice(0);
+            return;
+        }
+
+        if (inputToken === 'DAPP') {
+            console.log(await amm);
+            setPrice(await amm.token2Balance() / await amm.token1Balance());
+        } else {
+            setPrice(await amm.token1Balance() / await amm.token2Balance());
+        }
     };
 
     useEffect(() => {

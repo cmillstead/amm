@@ -132,29 +132,29 @@ const Deposit = () => {
         </Card>
 
         {isDepositing ? (
-                <Alert
-                    message={'Deposit Pending...'}
-                    transactionHash={null}
-                    variant={'info'}
-                    setShowAlert={setShowAlert}
-                />
-            ) : isSuccess && showAlert ? (
-                <Alert
-                    message={'Deposit Successful'}
-                    transactionHash={transactionHash}
-                    variant={'success'}
-                    setShowAlert={setShowAlert}
-                />
-            ) : !isSuccess && showAlert ? (
-                <Alert
-                    message={'Deposit Failed'}
-                    transactionHash={null}
-                    variant={'danger'}
-                    setShowAlert={setShowAlert}
-                />
-            )  : (
-                <></>
-            )}
+            <Alert
+                message={'Deposit Pending...'}
+                transactionHash={null}
+                variant={'info'}
+                setShowAlert={setShowAlert}
+            />
+        ) : isSuccess && showAlert ? (
+            <Alert
+                message={'Deposit Successful'}
+                transactionHash={transactionHash}
+                variant={'success'}
+                setShowAlert={setShowAlert}
+            />
+        ) : !isSuccess && showAlert ? (
+            <Alert
+                message={'Deposit Failed'}
+                transactionHash={null}
+                variant={'danger'}
+                setShowAlert={setShowAlert}
+            />
+        )  : (
+            <></>
+        )}
 
     </div>
     );
